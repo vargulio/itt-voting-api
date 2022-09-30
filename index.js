@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const mongoose = require('mongoose');
+const Parties = require('./party.model');
 
 const bahur = [{"id":1,"first_name":"Dun","last_name":"Crady","email":"dcrady0@opensource.org","gender":"Agender","ip_address":"137.231.99.35"},
 {"id":2,"first_name":"Gabie","last_name":"Szimoni","email":"gszimoni1@earthlink.net","gender":"Female","ip_address":"197.177.15.97"},
@@ -22,18 +24,28 @@ const bahur = [{"id":1,"first_name":"Dun","last_name":"Crady","email":"dcrady0@o
 {"id":19,"first_name":"Delphinia","last_name":"Glennard","email":"dglennardi@xrea.com","gender":"Female","ip_address":"55.55.7.154"},
 {"id":20,"first_name":"Louie","last_name":"Coneybeare","email":"lconeybearej@sourceforge.net","gender":"Male","ip_address":"215.60.97.80"}];
 
+mongoose.connect('mongodb+srv://admin:admin@cluster0.m5cjunj.mongodb.net/voting_db?retryWrites=true&w=majority').then(res => {
 
+  console.log('connected to mongo');  
+})
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
   });
+
+
  
-app.get('/users', (req, res) => {
-  res
+app.get('/parties', (req, res) => {
+
+  Parties.find({}).then(results => {
+    res
     .status(200)
-    .send(bahur)
+    .send(results)
     .end();
+    }
+  )
+  
 });
  
 // Start the server
