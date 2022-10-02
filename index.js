@@ -25,13 +25,60 @@ app.use(bodyParser.json());
 
 app.get('/parties', (req, res) => {
 
-  Parties.find({}).then(results => {
-    res
-      .status(200)
-      .send(results)
-      .end();
+  const sessionId = req.get('identity');
+
+  if(!sessionId) {
+    res.status(401).send({message: 'You are not logged in'});
+  } else {
+    Sessions.findById( sessionId, (err, session) => {
+      if(!session) {
+        res.status(401).send({message: 'You are not logged in'});
+
+      } else {
+        Parties.find({}).then(results => {
+          res
+              .status(200)
+              .send(results)
+              .end();
+        })
+      }
+
+
+
+    })
   }
-  )
+
+
+
+});
+
+app.get('/parties-search', (req, res) => {
+
+  const sessionId = req.get('identity');
+  const keyword = req.get('partyName');
+
+  if(!sessionId) {
+    res.status(401).send({message: 'You are not logged in'});
+  } else {
+    Sessions.findById( sessionId, (err, session) => {
+      if(!session) {
+        res.status(401).send({message: 'You are not logged in'});
+
+      } else {
+        Parties.find({name: keyword}).then(results => {
+          res
+              .status(200)
+              .send(results)
+              .end();
+        })
+      }
+
+
+
+    })
+  }
+
+
 
 });
 
@@ -99,11 +146,9 @@ app.post('/logout', (req, res) => {
     } else {
       res.status(400).send({message: 'No session with this id'});
     }
-
   })
+});
 
-
-})
 
 
 // Start the server
