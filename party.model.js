@@ -9,6 +9,7 @@ const partySchema = new Schema({
     leader: String,
     agitation: String
 })
+partySchema.index({name: 'text'});
 
 const Parties = mongoose.model('Parties', partySchema);
 

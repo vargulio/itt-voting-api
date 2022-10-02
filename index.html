@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<input id="search" type="text">
+
+
+<script>
+
+    document.getElementById('search').addEventListener('input', function (e) {
+
+        fetch('http://localhost:8080/parties-search', {
+            headers: {
+                'identity': '63395241e2b68aa2b41fcb93',
+                'partyName': e.target.value
+            }
+        }).then(res => res.json())
+        .then(data => {
+            console.log(data);
+        })
+
+    })
+</script>
+</body>
+</html>
