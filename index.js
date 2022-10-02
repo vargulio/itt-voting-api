@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Parties = require('./party.model');
 const Users = require('./user.model');
 const Sessions = require('./session.model');
+const Results = require('./results.model');
 
 const bodyParser = require('body-parser');
 
@@ -741,7 +742,7 @@ app.get('/parties', (req, res) => {
         Parties.find({}).then(results => {
           res
               .status(200)
-              .send(results)
+              .send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})))
               .end();
         })
       }
@@ -772,11 +773,103 @@ app.get('/parties-search', (req, res) => {
 
         Parties.find({name: {$regex: keyword, $options: 'i'}}, (err, results) => {
 
-          res.status(200).send(results);
+          res.status(200).send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})));
 
         })
+      }
+    })
+  }
+});
+
+app.get('/party/:id', (req, res) => {
+
+  const sessionId = req.get('identity');
+  const partyId = req.params.id;
+
+  if(!sessionId) {
+    res.status(401).send({message: 'You are not logged in'});
+  } else {
+    Sessions.findById( sessionId, (err, session) => {
+      if(!session) {
+        res.status(401).send({message: 'You are not logged in'});
+
+      } else {
 
 
+        Parties.findById(partyId, (err, result) => {
+          if(!result) {
+            res.status(404).send({message: 'There is no such party'});
+          } else {
+            res.status(200).send(result);
+          }
+
+        })
+      }
+    })
+  }
+});
+
+
+app.post('/vote/:id', (req, res) => {
+
+  const sessionId = req.get('identity');
+  const partyId = req.params.id;
+
+  if(!sessionId) {
+    res.status(401).send({message: 'You are not logged in'});
+  } else {
+    Sessions.findById( sessionId, (err, session) => {
+      if(!session) {
+        res.status(401).send({message: 'You are not logged in'});
+
+      } else {
+        Users.find({username: session.username}, (err, user) => {
+          if(user[0].hasVoted) {
+            res.status(406).send({message: 'You cannot vote twice'});
+          } else {
+
+            Users.findOneAndUpdate({username: session.username}, {hasVoted: true}).then(response => {
+              Results.find({partyId }, (err, results) => {
+                if(results && results.length === 0) {
+                  Results.create({partyId, voters: 1}).then(result => {
+                    res.status(200).send();
+                  });
+                } else {
+                  Results.findOneAndUpdate({partyId}, {voters: results[0].voters + 1} ).then(result => {
+                    res.status(200).send();
+
+                  })
+                }
+              })
+            });
+
+          }
+        })
+
+      }
+    })
+  }
+});
+
+
+app.get('/results', (req, res) => {
+
+  const sessionId = req.get('identity');
+
+  if(!sessionId) {
+    res.status(401).send({message: 'You are not logged in'});
+  } else {
+    Sessions.findById( sessionId, (err, session) => {
+      if(!session) {
+        res.status(401).send({message: 'You are not logged in'});
+
+      } else {
+        Results.find({}).then(results => {
+          res
+              .status(200)
+              .send(results.map(i => ({partyId: i.partyId, voters: i.voters})))
+              .end();
+        })
       }
 
 
@@ -787,6 +880,8 @@ app.get('/parties-search', (req, res) => {
 
 
 });
+
+
 
 app.post('/users', (req, res) => {
 
