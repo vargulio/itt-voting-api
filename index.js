@@ -112,7 +112,6 @@ app.get('/party/:id', (req, res) => {
   }
 });
 
-
 app.post('/vote/:id', async (req, res) => {
 
   const sessionId = req.get('identity');
@@ -152,7 +151,7 @@ app.post('/vote/:id', async (req, res) => {
   await Users.findOneAndUpdate({ username: session.username }, { hasVoted: true });
 
   const results = await Results.find({ partyId }).catch(e => {
-    console.log('Error when updating results' });
+    console.log('Error when updating results');
   });
 
 
@@ -198,8 +197,6 @@ app.get('/results', (req, res) => {
 
 
 });
-
-
 
 app.post('/users', (req, res) => {
 
@@ -267,6 +264,9 @@ app.post('/logout', (req, res) => {
     }
   })
 });
+
+
+
 
 
 
