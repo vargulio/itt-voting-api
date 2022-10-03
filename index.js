@@ -730,11 +730,13 @@ app.use(bodyParser.json());
 app.get('/parties', (req, res) => {
 
   const sessionId = req.get('identity');
-
+  console.log('sessionId', sessionId);
   if(!sessionId) {
     res.status(401).send({message: 'You are not logged in'});
   } else {
     Sessions.findById( sessionId, (err, session) => {
+      console.log('err', err);
+      console.log('session', session);
       if(!session) {
         res.status(401).send({message: 'You are not logged in'});
 
@@ -770,12 +772,18 @@ app.get('/parties-search', (req, res) => {
 
       } else {
 
+        if(keyword === undefined) {
+          res.status(400).send({message: 'You have to provide search criteria'});
+        } else {
 
-        Parties.find({name: {$regex: keyword, $options: 'i'}}, (err, results) => {
+          Parties.find({name: {$regex: keyword, $options: 'i'}}, (err, results) => {
 
-          res.status(200).send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})));
+            res.status(200).send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})));
+  
+          })
+        }
 
-        })
+        
       }
     })
   }
