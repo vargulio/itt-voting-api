@@ -731,21 +731,19 @@ app.get('/parties', (req, res) => {
 
   const sessionId = req.get('identity');
   console.log('sessionId', sessionId);
-  if(!sessionId) {
-    res.status(401).send({message: 'You are not logged in'});
+  if (!sessionId) {
+    res.status(401).send({ message: 'You are not logged in' });
   } else {
-    Sessions.findById( sessionId, (err, session) => {
-      console.log('err', err);
-      console.log('session', session);
-      if(!session) {
-        res.status(401).send({message: 'You are not logged in'});
+    Sessions.findById(sessionId, (err, session) => {
+      if (!session) {
+        res.status(401).send({ message: 'You are not logged in' });
 
       } else {
         Parties.find({}).then(results => {
           res
-              .status(200)
-              .send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})))
-              .end();
+            .status(200)
+            .send(results.map(i => ({ name: i.name, slogan: i.slogan, picture: i.picture, id: i.id })))
+            .end();
         })
       }
 
@@ -763,27 +761,27 @@ app.get('/parties-search', (req, res) => {
   const sessionId = req.get('identity');
   const keyword = req.get('partyName');
 
-  if(!sessionId) {
-    res.status(401).send({message: 'You are not logged in'});
+  if (!sessionId) {
+    res.status(401).send({ message: 'You are not logged in' });
   } else {
-    Sessions.findById( sessionId, (err, session) => {
-      if(!session) {
-        res.status(401).send({message: 'You are not logged in'});
+    Sessions.findById(sessionId, (err, session) => {
+      if (!session) {
+        res.status(401).send({ message: 'You are not logged in' });
 
       } else {
 
-        if(keyword === undefined) {
-          res.status(400).send({message: 'You have to provide search criteria'});
+        if (keyword === undefined) {
+          res.status(400).send({ message: 'You have to provide search criteria' });
         } else {
 
-          Parties.find({name: {$regex: keyword, $options: 'i'}}, (err, results) => {
+          Parties.find({ name: { $regex: keyword, $options: 'i' } }, (err, results) => {
 
-            res.status(200).send(results.map(i => ({name: i.name, slogan: i.slogan, picture: i.picture, id: i.id})));
-  
+            res.status(200).send(results.map(i => ({ name: i.name, slogan: i.slogan, picture: i.picture, id: i.id })));
+
           })
         }
 
-        
+
       }
     })
   }
@@ -794,19 +792,19 @@ app.get('/party/:id', (req, res) => {
   const sessionId = req.get('identity');
   const partyId = req.params.id;
 
-  if(!sessionId) {
-    res.status(401).send({message: 'You are not logged in'});
+  if (!sessionId) {
+    res.status(401).send({ message: 'You are not logged in' });
   } else {
-    Sessions.findById( sessionId, (err, session) => {
-      if(!session) {
-        res.status(401).send({message: 'You are not logged in'});
+    Sessions.findById(sessionId, (err, session) => {
+      if (!session) {
+        res.status(401).send({ message: 'You are not logged in' });
 
       } else {
 
 
         Parties.findById(partyId, (err, result) => {
-          if(!result) {
-            res.status(404).send({message: 'There is no such party'});
+          if (!result) {
+            res.status(404).send({ message: 'There is no such party' });
           } else {
             res.status(200).send(result);
           }
@@ -818,45 +816,60 @@ app.get('/party/:id', (req, res) => {
 });
 
 
-app.post('/vote/:id', (req, res) => {
+app.post('/vote/:id', async (req, res) => {
 
   const sessionId = req.get('identity');
   const partyId = req.params.id;
 
-  if(!sessionId) {
-    res.status(401).send({message: 'You are not logged in'});
+  const session = await Sessions.findById(sessionId).catch(e => {
+    console.log('Ne namiram takava sessia');
+  });
+  if (!session) {
+    res.status(401).send({ message: 'You are not logged in' });
+    return;
+  }
+
+  const party = await Parties.findById(partyId).catch(e => {
+    console.log('Greshka v turseneto na partiq');
+  })
+
+  if (!party) {
+    res.status(400).send({ message: 'No such party!' });
+    return;
+  }
+
+  const user = await Users.find({ username: session.username }).catch(e => {
+    console.log('Greshka v tyrseneto na user');
+  })
+  if (!user[0]) {
+    res.status(400).send({ message: 'No such user!' });
+    return;
+  }
+
+  if (user[0].hasVoted) {
+    res.status(406).send({ message: 'You cannot vote twice' });
+    return;
+  }
+
+  // update the hasVoted prop of the user
+  await Users.findOneAndUpdate({ username: session.username }, { hasVoted: true });
+
+  const results = await Results.find({ partyId }).catch(e => {
+    console.log('Error when updating results');
+  });
+
+
+
+  if (results && results.length === 0) {
+    await Results.create({ partyId, voters: 1 }).catch(e => {
+      res.status(500).send({ message: 'Error when creating new result entry' });
+    });
   } else {
-    Sessions.findById( sessionId, (err, session) => {
-      if(!session) {
-        res.status(401).send({message: 'You are not logged in'});
-
-      } else {
-        Users.find({username: session.username}, (err, user) => {
-          if(user[0].hasVoted) {
-            res.status(406).send({message: 'You cannot vote twice'});
-          } else {
-
-            Users.findOneAndUpdate({username: session.username}, {hasVoted: true}).then(response => {
-              Results.find({partyId }, (err, results) => {
-                if(results && results.length === 0) {
-                  Results.create({partyId, voters: 1}).then(result => {
-                    res.status(200).send();
-                  });
-                } else {
-                  Results.findOneAndUpdate({partyId}, {voters: results[0].voters + 1} ).then(result => {
-                    res.status(200).send();
-
-                  })
-                }
-              })
-            });
-
-          }
-        })
-
-      }
+    await Results.findOneAndUpdate({ partyId }, { voters: results[0].voters + 1 }).catch(e => {
+      res.status(500).send({ message: 'Error when updating result entry' });
     })
   }
+  res.status(200).send();
 });
 
 
@@ -864,19 +877,19 @@ app.get('/results', (req, res) => {
 
   const sessionId = req.get('identity');
 
-  if(!sessionId) {
-    res.status(401).send({message: 'You are not logged in'});
+  if (!sessionId) {
+    res.status(401).send({ message: 'You are not logged in' });
   } else {
-    Sessions.findById( sessionId, (err, session) => {
-      if(!session) {
-        res.status(401).send({message: 'You are not logged in'});
+    Sessions.findById(sessionId, (err, session) => {
+      if (!session) {
+        res.status(401).send({ message: 'You are not logged in' });
 
       } else {
         Results.find({}).then(results => {
           res
-              .status(200)
-              .send(results.map(i => ({partyId: i.partyId, voters: i.voters})))
-              .end();
+            .status(200)
+            .send(results.map(i => ({ partyId: i.partyId, voters: i.voters })))
+            .end();
         })
       }
 
@@ -899,7 +912,7 @@ app.post('/users', (req, res) => {
   Users.find({ username }, (err, result) => {
     if (result && result[0]) {
 
-      res.status(400).send({message: 'The username is taken!'});
+      res.status(400).send({ message: 'The username is taken!' });
     } else {
 
       Users.create({
@@ -907,7 +920,7 @@ app.post('/users', (req, res) => {
         password,
         hasVoted: false
       }, (err, result) => {
-        if(!err) {
+        if (!err) {
           res.status(200).send(result);
         } else {
           res.status(500).send();
@@ -925,19 +938,19 @@ app.post('/login', (req, res) => {
 
   Users.find({ username, password }, (err, result) => {
     if (result && result[0]) {
-      Sessions.find({username}, (err, sessions) => {
-        if(sessions && sessions[0]) {
-          res.status(200).send({sessionId: sessions[0].id});
+      Sessions.find({ username }, (err, sessions) => {
+        if (sessions && sessions[0]) {
+          res.status(200).send({ sessionId: sessions[0].id });
         } else {
-          Sessions.create({username}, (err, session) => {
-            res.status(200).send({sessionId: session.id});
+          Sessions.create({ username }, (err, session) => {
+            res.status(200).send({ sessionId: session.id });
           })
         }
       })
-      
+
     } else {
 
-      res.status(400).send({message: 'Wrong credentials'});
+      res.status(400).send({ message: 'Wrong credentials' });
 
     }
   })
@@ -948,12 +961,12 @@ app.post('/logout', (req, res) => {
 
   const id = req.body.id;
 
-  Sessions.findByIdAndRemove(id,(err, result) => {
+  Sessions.findByIdAndRemove(id, (err, result) => {
 
-    if(result) {
+    if (result) {
       res.status(200).send();
     } else {
-      res.status(400).send({message: 'No session with this id'});
+      res.status(400).send({ message: 'No session with this id' });
     }
   })
 });
