@@ -9,6 +9,8 @@ const Results = require('./results.model');
 const bodyParser = require('body-parser');
 
 mongoose.connect('mongodb+srv://admin:admin@cluster0.m5cjunj.mongodb.net/voting_db?retryWrites=true&w=majority').then(res => {
+  
+ 
   console.log('connected to mongo');
 })
 app.use(function (req, res, next) {
@@ -52,6 +54,8 @@ app.get('/parties', (req, res) => {
 
 
 });
+
+
 
 app.get('/parties-search', (req, res) => {
 
@@ -202,6 +206,11 @@ app.post('/users', (req, res) => {
 
   const username = req.body.username;
   const password = req.body.password;
+
+  if(!username || !password) {
+    res.status(400).send({message: "This is not a valid JSON or required fields are missing"});
+    return;
+  }
 
   Users.find({ username }, (err, result) => {
     if (result && result[0]) {
