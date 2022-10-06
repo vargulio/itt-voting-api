@@ -239,6 +239,11 @@ app.post('/login', (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
+  if(!username || !password) {
+    res.status(400).send({message: "This is not a valid JSON or required fields are missing"});
+    return;
+  }
+
   Users.find({ username, password }, (err, result) => {
     if (result && result[0]) {
       Sessions.find({ username }, (err, sessions) => {
@@ -263,6 +268,11 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
 
   const id = req.body.id;
+
+  if(!id) {
+    res.status(400).send({message: "This is not a valid JSON or required fields are missing"});
+    return;
+  }
 
   Sessions.findByIdAndRemove(id, (err, result) => {
 
