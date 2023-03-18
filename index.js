@@ -9,7 +9,7 @@ const Results = require('./results.model');
 const bodyParser = require('body-parser');
 
 mongoose.connect('mongodb+srv://admin:admin@cluster0.m5cjunj.mongodb.net/voting_db?retryWrites=true&w=majority').then(res => {
-  console.log('connected to mongo');
+  console.log('connected to mongo!');
 
   // Parties.create([
   //   {
