@@ -13,10 +13,11 @@
 
     document.getElementById('search').addEventListener('input', function (e) {
 
-        fetch('http://localhost:8080/parties-search', {
+        fetch('https://itt-voting-api.herokuapp.com/users', {
+            method: "POST",
+            body: JSON.stringify({username: 'mecho', password: 'puh'}),
             headers: {
-                'identity': '63395241e2b68aa2b41fcb93',
-                'partyName': e.target.value
+                'Content-Type': 'application/json'
             }
         }).then(res => res.json())
         .then(data => {
