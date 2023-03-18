@@ -9,9 +9,7 @@ const Results = require('./results.model');
 const bodyParser = require('body-parser');
 
 mongoose.connect('mongodb+srv://admin:admin@cluster0.m5cjunj.mongodb.net/voting_db?retryWrites=true&w=majority').then(res => {
-  
- 
-  console.log('connected to mongo');
+  console.log('connected to mongo!');
 })
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
