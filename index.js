@@ -167,7 +167,7 @@ app.post('/vote/:id', async (req, res) => {
       res.status(500).send({ message: 'Error when updating result entry' });
     })
   }
-  res.status(200).send();
+  res.status(200).send({message: "You voted successfully"});
 });
 
 
@@ -233,6 +233,7 @@ app.post('/users', (req, res) => {
 })
 
 app.post('/login', (req, res) => {
+
 
   const username = req.body.username;
   const password = req.body.password;
