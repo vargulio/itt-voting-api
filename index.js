@@ -244,12 +244,13 @@ app.post('/login', (req, res) => {
 
   Users.find({ username, password }, (err, result) => {
     if (result && result[0]) {
+      const {hasVoted, username} = result[0];
       Sessions.find({ username }, (err, sessions) => {
         if (sessions && sessions[0]) {
-          res.status(200).send({ sessionId: sessions[0].id });
+          res.status(200).send({ sessionId: sessions[0].id, hasVoted, username });
         } else {
           Sessions.create({ username }, (err, session) => {
-            res.status(200).send({ sessionId: session.id });
+            res.status(200).send({ sessionId: session.id, hasVoted, username });
           })
         }
       })
@@ -289,7 +290,7 @@ app.post('/logout', (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+app.listen(PORT, '192.168.1.4', () => {
   console.log(`App listening on port ${PORT}`);
   console.log('Press Ctrl+C to quit.');
 });
